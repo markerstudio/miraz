@@ -33,17 +33,17 @@ const FLICK_V = 260 // release velocity that throws a page over
 const MAX_DRAG_ANGLE = 175
 const SWEEP = 230 // degrees of turn per full-page-width drag (higher = easier)
 
-// Turned pages don't vanish — they rest in a visible fan on the open cover.
-// The most recent page lies on top (most upright), older ones settle flatter.
-const REST_TOP = 146
-const FAN = 3
-const REST_MAX = 163
+// Turned pages rest almost FLAT on the open cover, like real paper — the
+// newest lies fractionally proud, older ones pressed flatter beneath it.
+const REST_TOP = 166
+const FAN = 2
+const REST_MAX = 173.5
 const restAngle = (i, p) => Math.min(REST_TOP + (p - 1 - i) * FAN, REST_MAX)
 
 // The passport's ONE physical size — identical closed and open.
 const BOOK = { width: 296, height: 432 }
 const PAGE_W = BOOK.width - 9 // leaf width inside the spine inset
-const COVER_ANGLE = 166 // the cover rests slightly proud of flat — always visible
+const COVER_ANGLE = 176 // the cover lies nearly flat beneath the landed pages
 
 // Olive-green leather with a warm key light — the brief's premium زيتي cover.
 const LEATHER = {
@@ -433,8 +433,9 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
       const el = leafEls.current[i]
       if (!el) continue
       const flipped = i < page
-      // staggered, slightly uneven settle so the pile re-fans like paper
-      el.style.transition = `transform ${280 + (i % 3) * 45}ms cubic-bezier(0.33, 0.66, 0.3, 1)`
+      // one quiet, uniform settle — a landing page presses the pile down a
+      // couple of degrees; staggered timing here read as the pile shuffling
+      el.style.transition = 'transform 260ms cubic-bezier(0.33, 0.66, 0.3, 1)'
       el.style.zIndex = String(flipped ? i + 1 : N - i)
       el.style.transform = `rotateY(${flipped ? restAngle(i, page) : 0}deg)`
       const lift = liftEls.current[i]
@@ -903,6 +904,12 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
                   >
                     {pages.map((p, i) => {
                       const flipped = i < page
+                      // window the content: only leaves at/around the open
+                      // page (or in flight) keep their full DOM subtree —
+                      // buried leaves are just blank paper, which keeps the
+                      // 3D scene's layer count flat on phones
+                      const near = Math.abs(i - page) <= 1 || flying === i
+                      const isCountry = COUNTRIES.some((c) => c.id === p.id)
                       return (
                         <div
                           key={p.id}
@@ -929,7 +936,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
                               ...PAGE_BG,
                             }}
                           >
-                            {p.el}
+                            {near && p.el}
                             {/* leaf shading as it lifts toward the light */}
                             <div
                               ref={(el) => (liftEls.current[i] = el)}
@@ -958,6 +965,14 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
                               justifyContent: 'center',
                             }}
                           >
+                            {/* ink show-through: the page's own art bleeds
+                                faintly through the paper, mirrored — what a
+                                real turned leaf looks like from behind */}
+                            {near && isCountry && (
+                              <div style={{ position: 'absolute', inset: 0, transform: 'scaleX(-1)', opacity: 0.16, pointerEvents: 'none' }}>
+                                <PageArt id={p.id} />
+                              </div>
+                            )}
                             <img src={MARK_CHARCOAL} alt="" style={{ height: 64, opacity: 0.05 }} />
                           </div>
                         </div>
