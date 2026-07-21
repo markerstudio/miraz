@@ -11,7 +11,8 @@ countries unlocks the Miraz World grand rewards.
 | --- | --- |
 | `apps/passport/` | Guest app — the 3D passport (React + Vite). **Read-only**: stamps appear live as staff issue them. |
 | `apps/admin/` | Staff portal (React + Vite, served under `/admin`) — issue passports, scan/search guests, stamp visits, undo, reward alerts. |
-| `server/` | API (Express + SQLite) — passports, stamps, staff auth, and static hosting for both apps. One deployable service. |
+| `server/` | API (Express + SQLite) — passports, stamps, staff auth, and static hosting for both apps. One deployable service for classic Node hosts. |
+| `api/` | The same API as a **Vercel serverless function** (Postgres/Neon). Used automatically when the repo is imported into Vercel. |
 
 ## Architecture
 
@@ -53,7 +54,30 @@ For frontend development with hot reload: `npm run dev` in either app and
 point it at the API with `VITE_API_URL=http://localhost:8787` (admin) or
 `?api=http://localhost:8787&code=…` (passport).
 
-## Deploy (one service)
+## Deploy to Vercel (recommended)
+
+The repo is one-click importable — `vercel.json` builds both apps into
+`public/` and routes `/api/*` to the serverless function in `api/`.
+
+1. **Import** — [vercel.com/new](https://vercel.com/new) → import
+   `markerstudio/miraz`. Framework preset **Other** (auto-detected from
+   `vercel.json`); leave build settings untouched.
+2. **Database** — in the project: **Storage → Create Database → Neon
+   (Postgres)**. Vercel injects `DATABASE_URL` automatically; tables are
+   created on first request.
+3. **Staff key** — **Settings → Environment Variables** →
+   `ADMIN_KEY` = a strong secret (this is the only write credential;
+   without it the API falls back to `miraz-dev-key`).
+4. **Deploy.** Then:
+   - Staff portal: `https://<project>.vercel.app/admin` (sign in with `ADMIN_KEY`)
+   - Guest passport: `https://<project>.vercel.app/?code=MW-XXXXX` — the QR
+     shown in the portal encodes this link.
+   - Demo mode (no backend): `https://<project>.vercel.app/?demo=1`
+
+Verify the API locally without Postgres: `npm install && npm run test:api`
+(runs the whole route surface against in-memory Postgres via pg-mem).
+
+## Deploy (classic Node host, one service)
 
 Any Node host (Render / Railway / Fly):
 
