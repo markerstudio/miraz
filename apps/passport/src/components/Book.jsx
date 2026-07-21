@@ -7,6 +7,7 @@ import { NOISE } from '../data/textures'
 import { WorldMapWatermark, RewardIcon } from './Watermarks'
 import { PageArt } from './LandmarkArt'
 import { Slot } from './Stamp'
+import { oviFromMotion } from '../lib/ovi'
 
 const EASE_BOOK = 'cubic-bezier(0.6, 0.05, 0.22, 1)'
 
@@ -23,9 +24,10 @@ const buzz = (ms = 8) => {
 const EDGE_TAP_FRAC = 0.2
 
 // ---- page physics (degrees / seconds) ----
-const GRAVITY = 2400 // angular pull toward the resting pose
+const GRAVITY = 1700 // angular pull toward the resting pose
 const AIR_DRAG = 1.4 // paper flutter losses
-const CUSHION = 5.5 // air squeezed out as the leaf nears the pile
+const CUSHION = 3.5 // air squeezed out as the leaf nears the pile
+const CUSHION_FLOOR = 140 // never brake below this — no hovering at the pile
 const BOUNCE = 0.12 // restitution when the leaf hits the pile
 const FLICK_V = 260 // release velocity that throws a page over
 const MAX_DRAG_ANGLE = 175
@@ -105,8 +107,11 @@ function PageShell({ wm, children, justify = 'center', style = {} }) {
   )
 }
 
-/** Inside cover — world map + looping plane + the journey sentence. */
-function WelcomePage() {
+/** Inside cover — world map + looping plane + the journey sentence.
+ *  All page components are memoized: a page turn re-renders the Book, and
+ *  without memo all 12 page subtrees re-rendered in the same frame the
+ *  flight starts — a visible mid-flip stall on phones. */
+const WelcomePage = React.memo(function WelcomePage() {
   return (
     <PageShell wm={<WorldMapWatermark opacity={0.08} plane />}>
       <div style={{ textAlign: 'center' }}>
@@ -122,11 +127,11 @@ function WelcomePage() {
       </div>
     </PageShell>
   )
-}
+})
 
 /** Holder data page — real guest identity in live mode, a scannable QR of
  *  the passport code (staff scan it to stamp), and the MRZ strip. */
-function HolderPage({ holder, code }) {
+const HolderPage = React.memo(function HolderPage({ holder, code }) {
   const [qr, setQr] = React.useState('')
   const theCode = code || HOLDER.no.replace('‑', '-')
   React.useEffect(() => {
@@ -200,10 +205,10 @@ function HolderPage({ holder, code }) {
       </div>
     </PageShell>
   )
-}
+})
 
 /** One country: EN name at the page head, the story, then six stamp slots. */
-function CountryPage({ c, collected, onPick, canStamp, active = false }) {
+const CountryPage = React.memo(function CountryPage({ c, collected, onPick, canStamp, active = false }) {
   const stamped = (i) => collected.includes(`${c.id}-${i}`)
   const count = Array.from({ length: SLOTS_PER_COUNTRY }).filter((_, i) => stamped(i)).length
   return (
@@ -226,10 +231,10 @@ function CountryPage({ c, collected, onPick, canStamp, active = false }) {
       </div>
     </PageShell>
   )
-}
+})
 
 /** Miraz World — the three grand rewards + the photo moment. */
-function MirazWorldPage({ done, onClaim }) {
+const MirazWorldPage = React.memo(function MirazWorldPage({ done, onClaim }) {
   return (
     <PageShell wm={<WorldMapWatermark opacity={0.07} />} justify="center" style={{ textAlign: 'center', padding: '14px 16px 0' }}>
       <div dir="ltr" style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 16, letterSpacing: '0.19em', color: 'var(--text-primary)' }}>MIRAZ WORLD</div>
@@ -270,10 +275,10 @@ function MirazWorldPage({ done, onClaim }) {
       )}
     </PageShell>
   )
-}
+})
 
 /** Memories page — ruled lines under a faint world map. */
-function NotesPage() {
+const NotesPage = React.memo(function NotesPage() {
   return (
     <PageShell wm={<WorldMapWatermark opacity={0.045} />} justify="flex-start" style={{ textAlign: 'center', padding: '20px 18px 0' }}>
       <div lang="ar" style={{ fontFamily: 'var(--font-display-ar)', fontWeight: 500, fontSize: 13.5, color: 'var(--text-primary)' }}>
@@ -297,10 +302,10 @@ function NotesPage() {
       </div>
     </PageShell>
   )
-}
+})
 
 /** Last page — the rewards ladder and the passport rules. */
-function RewardsPage({ total }) {
+const RewardsPage = React.memo(function RewardsPage({ total }) {
   return (
     <PageShell justify="flex-start" style={{ padding: '14px 16px 0' }}>
       <div dir="ltr" style={{ textAlign: 'center', fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 12.5, letterSpacing: '0.11em', color: 'var(--text-primary)' }}>
@@ -333,7 +338,7 @@ function RewardsPage({ total }) {
       </div>
     </PageShell>
   )
-}
+})
 
 /* ------------------------------------------------------------------ */
 /* The book — all hot-path motion writes straight to the DOM (refs),   */
@@ -388,6 +393,9 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
     const lift = liftEls.current[i]
     if (lift) lift.style.opacity = String(Math.min(1, angle / 110))
     if (shadeEl.current) shadeEl.current.style.opacity = String(Math.sin(rad) * 0.9)
+    // the OVI ink glints from the paper's own motion — as the leaf lifts
+    // toward the light the stamps' color shifts, with no sensors needed
+    oviFromMotion(Math.sin(rad) * 0.9)
   }
 
   const beginFlight = (i) => {
@@ -412,6 +420,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
       shadeEl.current.style.transition = 'opacity 200ms ease'
       shadeEl.current.style.opacity = '0'
     }
+    oviFromMotion(0) // the ink settles back to its base color
     setFlying(null)
   }
 
@@ -445,7 +454,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
       return
     }
     let angle = angle0
-    let v = Math.max(-700, Math.min(700, v0))
+    let v = Math.max(-520, Math.min(520, v0))
     let last = performance.now()
     const dir = rest >= angle0 ? 1 : -1
     const step = (now) => {
@@ -453,8 +462,9 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
       last = now
       v += dir * GRAVITY * dt
       v *= Math.max(0, 1 - AIR_DRAG * dt)
-      // the air cushion: paper decelerates as it squeezes onto the pile
-      if (Math.abs(rest - angle) < 30) v *= Math.max(0, 1 - CUSHION * dt)
+      // the air cushion: paper decelerates as it squeezes onto the pile,
+      // but never below a floor speed — braking to a hover reads as fake
+      if (Math.abs(rest - angle) < 30 && Math.abs(v) > CUSHION_FLOOR) v *= Math.max(0, 1 - CUSHION * dt)
       angle += v * dt
       const hit = dir > 0 ? angle >= rest : angle <= rest
       if (hit) {

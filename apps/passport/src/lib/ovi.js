@@ -36,19 +36,23 @@ export function installOvi() {
 
   const quant = (v) => Math.round(Math.max(-1, Math.min(1, v)) / STEP) * STEP
 
+  let targetX = 0
+  let targetY = 0
+  const write = () => {
+    pending = 0
+    lastWrite = performance.now()
+    lastX = targetX
+    lastY = targetY
+    root.style.setProperty('--ovi', String(targetX))
+    root.style.setProperty('--ovi-y', String(targetY))
+  }
   const set = (x, y) => {
-    const qx = quant(x)
-    const qy = quant(y)
-    if (qx === lastX && qy === lastY) return
+    // always remember the newest target — the deferred write below must
+    // flush the LATEST value, or the final "settle to 0" write gets lost
+    targetX = quant(x)
+    targetY = quant(y)
+    if (targetX === lastX && targetY === lastY) return
     const now = performance.now()
-    const write = () => {
-      pending = 0
-      lastWrite = performance.now()
-      lastX = qx
-      lastY = qy
-      root.style.setProperty('--ovi', String(qx))
-      root.style.setProperty('--ovi-y', String(qy))
-    }
     if (now - lastWrite >= MIN_MS) {
       write()
     } else if (!pending) {
@@ -63,19 +67,25 @@ export function installOvi() {
     set((e.gamma ?? 0) / 32, ((e.beta ?? 45) - 45) / 32)
   })
 
+  // desktop fallback only — a MOUSE moving reads as "tilting the page".
+  // Fingers are excluded: on iOS (where orientation needs a permission
+  // popup we refuse to spring on guests) touch-driven color jumps felt
+  // arbitrary. There, the ink glints from page motion instead (below).
   window.addEventListener(
     'pointermove',
     (e) => {
-      if (hasOrientation) return
+      if (hasOrientation || e.pointerType !== 'mouse') return
       set((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1)
     },
     { passive: true },
   )
 
-  // one-time iOS permission request, piggybacked on the first tap
-  const DOE = window.DeviceOrientationEvent
-  if (DOE && typeof DOE.requestPermission === 'function') {
-    const ask = () => DOE.requestPermission().catch(() => {})
-    window.addEventListener('pointerdown', ask, { once: true, passive: true })
-  }
+  window.__miraz_ovi_set = set
+}
+
+/** Drive the ink from the page's own motion (deg-angle sine, -1..1) —
+ *  the sheen sweeps as a leaf lifts and turns, no sensors involved. */
+export function oviFromMotion(v) {
+  if (typeof window === 'undefined') return
+  window.__miraz_ovi_set?.(v, 0)
 }
