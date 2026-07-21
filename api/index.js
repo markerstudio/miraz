@@ -1,4 +1,4 @@
-// Vercel serverless entry — all /api/* routes. Postgres via DATABASE_URL
+// Vercel serverless entry — all /api/* routes (single entry, routed via vercel.json). Postgres via DATABASE_URL
 // (Neon: add it from the Vercel dashboard → Storage → Neon).
 import pg from 'pg'
 import { createApi } from './_impl.js'
