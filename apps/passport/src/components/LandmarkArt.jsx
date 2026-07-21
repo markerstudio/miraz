@@ -424,8 +424,10 @@ const ENGRAVINGS = {
 const FADE =
   'linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 58%, rgba(0,0,0,0.3) 84%, transparent 98%)'
 
-/** Full-page engraved landmark behind a country page's content. */
-export function PageArt({ id, opacity = 0.12 }) {
+/** Full-page engraved landmark behind a country page's content.
+ *  Multiply-blended onto the guilloché so the line work soaks into the
+ *  paper like printed intaglio instead of sitting on top of it. */
+export function PageArt({ id }) {
   const raster = rasterFor(id)
   const mask = { maskImage: FADE, WebkitMaskImage: FADE }
   if (raster) {
@@ -435,10 +437,12 @@ export function PageArt({ id, opacity = 0.12 }) {
           position: 'absolute',
           inset: 0,
           backgroundImage: `url(${raster})`,
-          backgroundSize: 'cover',
+          backgroundSize: 'contain',
+          backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center bottom',
           filter: 'grayscale(1)',
-          opacity,
+          mixBlendMode: 'multiply',
+          opacity: 0.42,
           pointerEvents: 'none',
           ...mask,
         }}
@@ -455,7 +459,8 @@ export function PageArt({ id, opacity = 0.12 }) {
         justifyContent: 'center',
         padding: '0 10px',
         color: 'var(--charcoal)',
-        opacity,
+        mixBlendMode: 'multiply',
+        opacity: 0.16,
         pointerEvents: 'none',
         ...mask,
       }}
