@@ -201,7 +201,7 @@ function HolderPage({ holder, code }) {
 }
 
 /** One country: EN name at the page head, the story, then six stamp slots. */
-function CountryPage({ c, collected, onPick, canStamp }) {
+function CountryPage({ c, collected, onPick, canStamp, active = false }) {
   const stamped = (i) => collected.includes(`${c.id}-${i}`)
   const count = Array.from({ length: SLOTS_PER_COUNTRY }).filter((_, i) => stamped(i)).length
   return (
@@ -219,7 +219,7 @@ function CountryPage({ c, collected, onPick, canStamp }) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '9px 6px', padding: '6px 4px 0' }}>
         {Array.from({ length: SLOTS_PER_COUNTRY }).map((_, i) => (
-          <Slot key={i} c={c} slotId={`${c.id}-${i}`} has={stamped(i)} rot={SLOT_ROTS[i]} onPick={onPick} size={74} interactive={canStamp} />
+          <Slot key={i} c={c} slotId={`${c.id}-${i}`} has={stamped(i)} rot={SLOT_ROTS[i]} onPick={onPick} size={74} interactive={canStamp} ovi={active} />
         ))}
       </div>
     </PageShell>
@@ -368,7 +368,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
   const pages = [
     { id: 'welcome', el: <WelcomePage /> },
     { id: 'holder', el: <HolderPage holder={holder} code={code} /> },
-    ...COUNTRIES.map((c, i) => ({ id: c.id, el: <CountryPage c={c} index={i} collected={collected} onPick={onPick} canStamp={canStamp} /> })),
+    ...COUNTRIES.map((c, i) => ({ id: c.id, el: <CountryPage c={c} index={i} collected={collected} onPick={onPick} canStamp={canStamp} active={page === i + 2} /> })),
     { id: 'world', el: <MirazWorldPage done={done} onClaim={onClaim} /> },
     { id: 'notes', el: <NotesPage /> },
     { id: 'rewards', el: <RewardsPage total={total} /> },

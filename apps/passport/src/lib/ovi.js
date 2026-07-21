@@ -1,14 +1,23 @@
 // Optically-variable-ink driver — the tilt signal behind the passport's
 // colour-shifting stamps, like real OVI security ink.
 //
-// Writes two custom properties on <html>, smoothed every frame:
+// Writes two custom properties on <html>:
 //   --ovi   -1..1   left/right tilt (device gamma; pointer-x fallback)
 //   --ovi-y -1..1   forward/back tilt (device beta around holding pose)
 //
+// Perf contract: device orientation jitters at ~60Hz forever, and every
+// custom-property write on the root invalidates style for the document —
+// so writes are quantized to visible steps and rate-limited. Smoothing
+// between steps is left to CSS transitions on the few elements that use
+// the vars (only the open page's stamps), keeping repaints tiny.
+//
 // iOS Safari only exposes deviceorientation after an explicit permission
 // request from a user gesture, so the first tap anywhere asks once. Desktop
-// and permission-denied phones fall back to pointer position, so the ink
-// always answers to something. Honors prefers-reduced-motion.
+// and permission-denied phones fall back to pointer position. Honors
+// prefers-reduced-motion.
+
+const STEP = 0.06 // quantize: ignore sub-visible tilt jitter
+const MIN_MS = 90 // rate limit: ~11 writes/s worst case
 
 export function installOvi() {
   if (typeof window === 'undefined' || window.__miraz_ovi) return
@@ -19,26 +28,32 @@ export function installOvi() {
   root.style.setProperty('--ovi-y', '0')
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return
 
-  let tx = 0
-  let ty = 0
-  let cx = 0
-  let cy = 0
-  let raf = 0
+  let lastX = 0
+  let lastY = 0
+  let lastWrite = 0
+  let pending = 0
   let hasOrientation = false
 
-  const clamp = (v) => Math.max(-1, Math.min(1, v))
-  const tick = () => {
-    raf = 0
-    cx += (tx - cx) * 0.14
-    cy += (ty - cy) * 0.14
-    root.style.setProperty('--ovi', cx.toFixed(4))
-    root.style.setProperty('--ovi-y', cy.toFixed(4))
-    if (Math.abs(tx - cx) > 0.002 || Math.abs(ty - cy) > 0.002) raf = requestAnimationFrame(tick)
-  }
+  const quant = (v) => Math.round(Math.max(-1, Math.min(1, v)) / STEP) * STEP
+
   const set = (x, y) => {
-    tx = clamp(x)
-    ty = clamp(y)
-    if (!raf) raf = requestAnimationFrame(tick)
+    const qx = quant(x)
+    const qy = quant(y)
+    if (qx === lastX && qy === lastY) return
+    const now = performance.now()
+    const write = () => {
+      pending = 0
+      lastWrite = performance.now()
+      lastX = qx
+      lastY = qy
+      root.style.setProperty('--ovi', String(qx))
+      root.style.setProperty('--ovi-y', String(qy))
+    }
+    if (now - lastWrite >= MIN_MS) {
+      write()
+    } else if (!pending) {
+      pending = setTimeout(write, MIN_MS - (now - lastWrite))
+    }
   }
 
   window.addEventListener('deviceorientation', (e) => {

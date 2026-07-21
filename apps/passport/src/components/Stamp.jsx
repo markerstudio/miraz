@@ -45,7 +45,7 @@ export function ShapeOutline({ shape = 'circle', dashed = false }) {
  * relief version for the rubber die face. `fresh` plays the ink-drop
  * keyframe (squish and settle) when a new stamp lands.
  */
-export function Stamp({ c, size = 120, fresh = false, press = false }) {
+export function Stamp({ c, size = 120, fresh = false, press = false, ovi = false }) {
   const ink = INK[c.ink]
   const shape = c.shape || 'circle'
   // wide/low shapes get slightly smaller innards so nothing kisses the frame
@@ -66,32 +66,46 @@ export function Stamp({ c, size = 120, fresh = false, press = false }) {
         height: size,
         position: 'relative',
         color: ink,
-        // OVI security ink — hue swings with device tilt (see lib/ovi.js),
-        // gold ↔ green like a real optically-variable overprint
-        filter: press
-          ? 'contrast(1.05)'
-          : 'contrast(1.05) hue-rotate(calc(var(--ovi, 0) * 42deg)) saturate(calc(1.05 + var(--ovi, 0) * 0.25))',
+        filter: 'contrast(1.05)',
         animation: fresh ? 'inkStamp 520ms 700ms both' : 'none',
         opacity: fresh ? 0 : 0.92,
         ...inkTexture,
       }}
     >
-      {/* tilt-driven specular sheen sweeping across the impression */}
-      {!press && (
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            inset: '-6%',
-            pointerEvents: 'none',
-            mixBlendMode: 'screen',
-            opacity: 0.5,
-            background:
-              'linear-gradient(115deg, transparent 34%, rgba(214,255,182,0.5) 46%, rgba(255,244,196,0.55) 52%, transparent 64%)',
-            backgroundSize: '260% 260%',
-            backgroundPosition: 'calc(50% + var(--ovi, 0) * 120%) calc(50% + var(--ovi-y, 0) * 60%)',
-          }}
-        />
+      {/* OVI security ink — only the open page's stamps shimmer (perf).
+          A green wash crossfades in with tilt (opacity is compositor-cheap)
+          and a specular band sweeps across the impression; CSS transitions
+          smooth between the driver's quantized tilt steps. */}
+      {ovi && !press && (
+        <>
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+              mixBlendMode: 'screen',
+              background: 'linear-gradient(160deg, rgba(196,255,176,0.55), rgba(150,235,190,0.35))',
+              opacity: 'calc(0.38 + var(--ovi, 0) * 0.38)',
+              transition: 'opacity 220ms ease-out',
+            }}
+          />
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: '-6%',
+              pointerEvents: 'none',
+              mixBlendMode: 'screen',
+              opacity: 0.45,
+              background:
+                'linear-gradient(115deg, transparent 34%, rgba(214,255,182,0.5) 46%, rgba(255,244,196,0.6) 52%, transparent 64%)',
+              backgroundSize: '260% 260%',
+              backgroundPosition: 'calc(50% + var(--ovi, 0) * 120%) calc(50% + var(--ovi-y, 0) * 60%)',
+              transition: 'background-position 220ms ease-out',
+            }}
+          />
+        </>
       )}
       <ShapeOutline shape={shape} />
       <div
@@ -128,7 +142,7 @@ export function Stamp({ c, size = 120, fresh = false, press = false }) {
  * (dashed, with the faint house-logo watermark the brief asks for).
  * Tap an empty one to stamp your visit.
  */
-export function Slot({ c, slotId, has, rot, onPick, size = 104, interactive = true }) {
+export function Slot({ c, slotId, has, rot, onPick, size = 104, interactive = true, ovi = false }) {
   return (
     <div
       data-slot={slotId}
@@ -145,7 +159,7 @@ export function Slot({ c, slotId, has, rot, onPick, size = 104, interactive = tr
       }}
     >
       {has ? (
-        <Stamp c={c} size={size} />
+        <Stamp c={c} size={size} ovi={ovi} />
       ) : (
         <div
           style={{
