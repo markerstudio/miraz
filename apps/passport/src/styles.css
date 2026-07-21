@@ -1,0 +1,94 @@
+/* ============================================================
+   MIRAZ PASSPORT — global entry point.
+   Imports the design-system tokens, then app-level globals.
+   ============================================================ */
+@import './tokens/fonts.css';
+@import './tokens/colors.css';
+@import './tokens/typography.css';
+@import './tokens/spacing.css';
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+
+body {
+  background: radial-gradient(120% 120% at 50% 0%, #35302a 0%, #211f1c 60%, #17150f 100%);
+  min-height: 100vh;
+  font-family: var(--font-sans);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+/* On an actual phone the app runs full-bleed (no device frame). */
+@media (max-width: 500px) {
+  body { padding: 0; }
+}
+
+a { color: var(--brass); }
+a:hover { color: var(--brass-soft); }
+
+/* ---- Passport animations ---- */
+
+/* ink landing on the page — squish on impact, then settle */
+@keyframes inkStamp {
+  0%   { opacity: 0;    transform: scale(1.16); }
+  55%  { opacity: 0.96; transform: scale(0.965); }
+  100% { opacity: 0.92; transform: scale(1); }
+}
+
+
+/* the stamp tool: drop in perspective, bottom out, bounce, lift away */
+@keyframes toolPress {
+  0%   { transform: translate(-50%, -330px) rotateX(28deg) scale(1.05); opacity: 0; }
+  12%  { transform: translate(-50%, -240px) rotateX(21deg) scale(1.04); opacity: 1; }
+  48%  { transform: translate(-50%, 0)     rotateX(0deg)  scale(1);    opacity: 1; }
+  58%  { transform: translate(-50%, -26px) rotateX(-3deg) scale(1);    opacity: 1; }
+  70%  { transform: translate(-50%, -3px)  rotateX(0deg)  scale(1);    opacity: 1; }
+  86%  { transform: translate(-50%, -160px) rotateX(10deg) scale(1.02); opacity: 1; }
+  100% { transform: translate(-50%, -330px) rotateX(20deg) scale(1.04); opacity: 0; }
+}
+
+/* the die's shadow growing as it approaches the page */
+@keyframes toolShadow {
+  0%   { transform: translate(-50%, -50%) scale(0.55); opacity: 0; }
+  48%  { transform: translate(-50%, -50%) scale(1.02); opacity: 0.9; }
+  70%  { transform: translate(-50%, -50%) scale(1);    opacity: 0.85; }
+  100% { transform: translate(-50%, -50%) scale(0.5);  opacity: 0; }
+}
+
+/* ink ripple on impact */
+@keyframes impactRing {
+  0%   { opacity: 0.55; transform: scale(0.62); }
+  100% { opacity: 0;    transform: scale(1.28); }
+}
+
+/* the book jolts when the stamp bottoms out */
+@keyframes bookShake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-5px) rotate(-0.4deg); }
+  50% { transform: translateX(5px) rotate(0.35deg); }
+  75% { transform: translateX(-3px) rotate(-0.2deg); }
+}
+
+/* the closed passport breathing on the table */
+@keyframes idleFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-7px) rotate(0.5deg); }
+}
+
+@keyframes captionPulse {
+  0%, 100% { opacity: 0.9; }
+  50%      { opacity: 0.45; }
+}
+
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeUp  { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes screenIn { from { opacity: 0; } to { opacity: 1; } }
+
+.screen { animation: screenIn 260ms var(--ease-out) both; height: 100%; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}

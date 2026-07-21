@@ -1,0 +1,59 @@
+/* ============================================================
+   MIRAZ — COLOR TOKENS
+   Palette drawn from the interior architecture: warm ivory,
+   walnut, charcoal; travertine, olive sage, antique brass.
+   ============================================================ */
+:root {
+  /* — Primary — */
+  --ivory:      #F4F0E8;   /* Warm Ivory  — primary light ground */
+  --walnut:     #6B4A34;   /* Walnut      — warm brown accent */
+  --charcoal:   #2C2A28;   /* Charcoal    — primary dark ground / ink */
+
+  /* — Secondary — */
+  --travertine: #DDD2C2;   /* Travertine  — stone neutral */
+  --olive:      #6F7762;   /* Olive Sage  — muted botanical */
+  --brass:      #B58B4C;   /* Antique Brass — metallic highlight */
+
+  /* — Tints & shades (derived, harmonious) — */
+  --ivory-deep:    #EAE3D6;  /* ivory pressed on ivory */
+  --travertine-deep:#CFC2AE;
+  --walnut-soft:   #8A6349;
+  --charcoal-soft: #4A4643;
+  --charcoal-line: #3A3734;
+  --brass-soft:    #C9A87D;
+  --brass-deep:    #92734C;
+  --olive-soft:    #868D79;
+
+  /* — Gold lockup gradient (logo / rare metallic moments) — */
+  --gold-gradient: linear-gradient(135deg, #b08f64 0%, #92734c 25%, #c9a87d 57%, #9a794e 100%); /* @kind color */
+
+  /* ---------- Semantic aliases ---------- */
+  /* Surfaces */
+  --surface-page:      var(--ivory);
+  --surface-raised:    #FBF9F4;      /* card on ivory */
+  --surface-sunken:    var(--ivory-deep);
+  --surface-stone:     var(--travertine);
+  --surface-ink:       var(--charcoal);
+  --surface-ink-soft:  var(--charcoal-soft);
+
+  /* Text */
+  --text-primary:    var(--charcoal);
+  --text-secondary:  #6B6560;        /* warm grey */
+  --text-muted:      #9A938A;
+  --text-on-ink:     var(--ivory);
+  --text-on-ink-dim: #B8B2A8;
+  --text-brand:      var(--brass-deep);  /* prices / brand detail — brass, not brown */
+  --text-accent:     var(--brass);
+
+  /* Lines & borders */
+  --line-soft:   rgba(44,42,40,0.10);
+  --line-medium: rgba(44,42,40,0.18);
+  --line-strong: rgba(44,42,40,0.32);
+  --line-on-ink: rgba(244,240,232,0.16);
+
+  /* Interactive — charcoal ink primary, brass focus. Walnut retired from UI. */
+  --accent:          var(--charcoal);
+  --accent-hover:    #1E1D1B;
+  --accent-press:    #131211;
+  --focus-ring:      rgba(181,139,76,0.55);
+}

@@ -1,0 +1,61 @@
+/* ============================================================
+   MIRAZ — TYPOGRAPHY TOKENS
+   Bilingual, Arabic-first. Each family stack lists the Latin face
+   first and the Arabic face second, so the browser renders each
+   script with the right typeface automatically (Latin glyphs from
+   Cormorant/Jost, Arabic glyphs from Reem Kufi / Tajawal).
+   High contrast, generous spacing, editorial hierarchy.
+   ============================================================ */
+:root {
+  /* Families — bilingual stacks (Latin first, Arabic fallback = auto per-script) */
+  --font-display: 'Cormorant Garamond', 'Reem Kufi', 'Times New Roman', serif;
+  --font-sans:    'Jost', 'Tajawal', 'Helvetica Neue', Arial, sans-serif;
+
+  /* Arabic-only stacks — geometric Reem Kufi for display, Tajawal for text. */
+  --font-display-ar: 'Reem Kufi', 'Cormorant Garamond', serif;
+  --font-sans-ar:    'Tajawal', 'Jost', sans-serif;
+
+  /* Fluid display scale (serif) */
+  --text-display: 300 clamp(3.5rem, 7vw, 6rem)/1.02 var(--font-display);
+  --text-h1:      400 clamp(2.75rem, 5vw, 4.25rem)/1.05 var(--font-display);
+  --text-h2:      400 clamp(2rem, 3.4vw, 3rem)/1.1 var(--font-display);
+  --text-h3:      500 clamp(1.5rem, 2.2vw, 2rem)/1.2 var(--font-display);
+  --text-quote:   400 italic clamp(1.5rem, 2.6vw, 2.25rem)/1.35 var(--font-display);
+
+  /* Body & UI (sans) */
+  --text-lead:    400 1.25rem/1.6 var(--font-sans);
+  --text-body:    400 1rem/1.7 var(--font-sans);
+  --text-small:   400 0.875rem/1.6 var(--font-sans);
+  --text-caption: 400 0.75rem/1.5 var(--font-sans);
+
+  /* Eyebrow / label — spaced grotesk caps, the brand's signature */
+  --text-eyebrow: 500 0.75rem/1 var(--font-sans);
+  --tracking-eyebrow: 0.28em;   /* wide editorial tracking @kind other */
+  --tracking-label:   0.16em;   /* @kind other */
+  --tracking-caps:    0.08em;   /* @kind other */
+
+  /* Weights */
+  --fw-light: 300;    /* @kind font */
+  --fw-regular: 400;  /* @kind font */
+  --fw-medium: 500;   /* @kind font */
+  --fw-semibold: 600; /* @kind font */
+
+  /* Measure */
+  --measure: 62ch;         /* @kind other */
+  --measure-narrow: 42ch;  /* @kind other */
+
+  /* Bilingual helpers — Reem Kufi sits tighter than Naskh; Tajawal reads clean. */
+  --lh-ar-display: 1.28;   /* @kind other */
+  --lh-ar-body: 1.85;      /* @kind other */
+}
+
+/* ---- Arabic-only display/body presets (apply on [lang="ar"] blocks) ---- */
+[lang="ar"] {
+  font-family: var(--font-sans-ar);
+}
+[lang="ar"] h1, [lang="ar"] h2, [lang="ar"] h3, [lang="ar"] .display {
+  font-family: var(--font-display-ar);
+  line-height: var(--lh-ar-display);
+  font-weight: 500;
+  letter-spacing: 0;
+}

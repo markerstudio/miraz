@@ -1,0 +1,14 @@
+@import './tokens/fonts.css';
+@import './tokens/colors.css';
+@import './tokens/typography.css';
+@import './tokens/spacing.css';
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--ivory);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+}
+input, button { font-family: inherit; }

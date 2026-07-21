@@ -1,0 +1,48 @@
+/* ============================================================
+   MIRAZ — SPACING, RADIUS, SHADOW, MOTION TOKENS
+   Architectural, generous, quiet. Minimal rounding — the brand
+   favours crisp edges and negative space over soft cards.
+   ============================================================ */
+:root {
+  /* Spacing scale (8px base, generous editorial rhythm) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+  --space-11: 160px;
+
+  /* Section rhythm */
+  --section-y: clamp(64px, 10vw, 160px); /* @kind spacing */
+  --gutter:    clamp(20px, 5vw, 72px);   /* @kind spacing */
+  --content-max: 1240px;                 /* @kind spacing */
+
+  /* Radius — crisp; the brand rounds sparingly */
+  --radius-none: 0;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-pill: 999px;
+
+  /* Borders */
+  --border-hair: 1px solid var(--line-soft);   /* @kind other */
+  --border-line: 1px solid var(--line-medium); /* @kind other */
+
+  /* Shadows — soft, warm, low; luxury restraint, never harsh */
+  --shadow-sm: 0 1px 2px rgba(44,42,40,0.05);
+  --shadow-md: 0 8px 24px -12px rgba(44,42,40,0.18);
+  --shadow-lg: 0 24px 60px -24px rgba(44,42,40,0.28);
+  --shadow-image: 0 32px 80px -32px rgba(44,42,40,0.40);
+
+  /* Motion — slow, considered, no bounce */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);      /* @kind other */
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);   /* @kind other */
+  --dur-fast: 180ms;   /* @kind other */
+  --dur-base: 320ms;   /* @kind other */
+  --dur-slow: 560ms;   /* @kind other */
+  --transition: var(--dur-base) var(--ease-out); /* @kind other */
+}
