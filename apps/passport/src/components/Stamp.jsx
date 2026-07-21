@@ -78,6 +78,9 @@ export function Stamp({ c, size = 120, fresh = false, press = false, ovi = false
           smooth between the driver's quantized tilt steps. */}
       {ovi && !press && (
         <>
+          {/* two-tone shift: base ink at rest; green one way, amber the
+              other (negative calc values clamp to 0, so each side vanishes
+              past neutral) — like real gold↔green OVI overprint */}
           <div
             aria-hidden
             style={{
@@ -86,7 +89,19 @@ export function Stamp({ c, size = 120, fresh = false, press = false, ovi = false
               pointerEvents: 'none',
               mixBlendMode: 'screen',
               background: 'linear-gradient(160deg, rgba(196,255,176,0.55), rgba(150,235,190,0.35))',
-              opacity: 'calc(0.38 + var(--ovi, 0) * 0.38)',
+              opacity: 'calc(var(--ovi, 0) * 0.55)',
+              transition: 'opacity 220ms ease-out',
+            }}
+          />
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+              mixBlendMode: 'screen',
+              background: 'linear-gradient(200deg, rgba(255,216,150,0.5), rgba(235,178,120,0.32))',
+              opacity: 'calc(var(--ovi, 0) * -0.55)',
               transition: 'opacity 220ms ease-out',
             }}
           />
@@ -97,7 +112,9 @@ export function Stamp({ c, size = 120, fresh = false, press = false, ovi = false
               inset: '-6%',
               pointerEvents: 'none',
               mixBlendMode: 'screen',
-              opacity: 0.45,
+              // |tilt| via max(): the band only glints while actually tilted
+              opacity: 'max(calc(var(--ovi, 0) * 0.5), calc(var(--ovi, 0) * -0.5))',
+              transition: 'opacity 220ms ease-out, background-position 220ms ease-out',
               background:
                 'linear-gradient(115deg, transparent 34%, rgba(214,255,182,0.5) 46%, rgba(255,244,196,0.6) 52%, transparent 64%)',
               backgroundSize: '260% 260%',

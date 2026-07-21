@@ -25,7 +25,8 @@ const EDGE_TAP_FRAC = 0.2
 // ---- page physics (degrees / seconds) ----
 const GRAVITY = 2400 // angular pull toward the resting pose
 const AIR_DRAG = 1.4 // paper flutter losses
-const BOUNCE = 0.24 // restitution when the leaf hits the pile
+const CUSHION = 5.5 // air squeezed out as the leaf nears the pile
+const BOUNCE = 0.12 // restitution when the leaf hits the pile
 const FLICK_V = 260 // release velocity that throws a page over
 const MAX_DRAG_ANGLE = 175
 const SWEEP = 230 // degrees of turn per full-page-width drag (higher = easier)
@@ -444,7 +445,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
       return
     }
     let angle = angle0
-    let v = Math.max(-900, Math.min(900, v0))
+    let v = Math.max(-700, Math.min(700, v0))
     let last = performance.now()
     const dir = rest >= angle0 ? 1 : -1
     const step = (now) => {
@@ -452,6 +453,8 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
       last = now
       v += dir * GRAVITY * dt
       v *= Math.max(0, 1 - AIR_DRAG * dt)
+      // the air cushion: paper decelerates as it squeezes onto the pile
+      if (Math.abs(rest - angle) < 30) v *= Math.max(0, 1 - CUSHION * dt)
       angle += v * dt
       const hit = dir > 0 ? angle >= rest : angle <= rest
       if (hit) {
@@ -916,7 +919,6 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
                               ...PAGE_BG,
                             }}
                           >
-                            <Grain opacity={0.035} size={220} />
                             {p.el}
                             {/* leaf shading as it lifts toward the light */}
                             <div

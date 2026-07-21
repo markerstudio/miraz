@@ -9,13 +9,11 @@ export const INK = {
   charcoal: 'var(--charcoal)',
 }
 
-// Guilloché security-page background — pages stay light beige like a real passport.
-export const PAGE_BG = {
-  background: 'var(--ivory)',
-  backgroundImage: `repeating-radial-gradient(circle at 22% 18%, rgba(111,119,98,0.05) 0 1px, transparent 1px 7px),
-    repeating-radial-gradient(circle at 82% 78%, rgba(181,139,76,0.05) 0 1px, transparent 1px 8px),
-    repeating-linear-gradient(58deg, rgba(44,42,40,0.028) 0 1px, transparent 1px 9px)`,
-}
+// Guilloché security-page background — pages stay light beige like a real
+// passport. Rasterized once (lib/paper.js) instead of live CSS gradients:
+// the same pattern painted on ~25 leaf faces was a mobile repaint hotspot.
+import { paperStyle } from '../lib/paper.js'
+export const PAGE_BG = paperStyle()
 
 export const SLOTS_PER_COUNTRY = 6
 export const SLOT_ROTS = [-4, 3, -2, 5, -3, 2]
