@@ -19,15 +19,16 @@ const buzz = (ms = 8) => {
   }
 }
 
-// Tapping the outer edges of the page turns it (RTL: left edge = forward).
-const EDGE_TAP_FRAC = 0.17
+// Tapping the outer edges of the screen turns the page (RTL: left = forward).
+const EDGE_TAP_FRAC = 0.2
 
 // ---- page physics (degrees / seconds) ----
 const GRAVITY = 2400 // angular pull toward the resting pose
 const AIR_DRAG = 1.4 // paper flutter losses
 const BOUNCE = 0.24 // restitution when the leaf hits the pile
-const FLICK_V = 320 // release velocity that throws a page over
+const FLICK_V = 260 // release velocity that throws a page over
 const MAX_DRAG_ANGLE = 175
+const SWEEP = 230 // degrees of turn per full-page-width drag (higher = easier)
 
 // Turned pages don't vanish — they rest in a visible fan on the open cover.
 // The most recent page lies on top (most upright), older ones settle flatter.
@@ -422,7 +423,8 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
       const el = leafEls.current[i]
       if (!el) continue
       const flipped = i < page
-      el.style.transition = 'transform 300ms ease'
+      // staggered, slightly uneven settle so the pile re-fans like paper
+      el.style.transition = `transform ${280 + (i % 3) * 45}ms cubic-bezier(0.33, 0.66, 0.3, 1)`
       el.style.zIndex = String(flipped ? i + 1 : N - i)
       el.style.transform = `rotateY(${flipped ? restAngle(i, page) : 0}deg)`
       const lift = liftEls.current[i]
@@ -475,18 +477,22 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
       const clamped = Math.max(0, Math.min(N - 1, next))
       if (clamped === p) return
       buzz()
+      // every non-gesture turn grabs the leaf a little differently — a
+      // random corner peel and launch speed so no two turns look identical
+      const k = (Math.random() - 0.5) * 0.56
+      const v0 = 150 + Math.random() * 90
       if (clamped > p) {
         const leaf = p
         beginFlight(leaf)
-        applyFrame(leaf, 0, 0)
+        applyFrame(leaf, 0, k)
         setPage(clamped)
-        startPhysics(leaf, 0, 180, restAngle(leaf, clamped), 0)
+        startPhysics(leaf, 0, v0, restAngle(leaf, clamped), k)
       } else {
         const leaf = clamped
         beginFlight(leaf)
-        applyFrame(leaf, restAngle(leaf, p), 0)
+        applyFrame(leaf, restAngle(leaf, p), k)
         setPage(clamped)
-        startPhysics(leaf, restAngle(leaf, p), -180, 0, 0)
+        startPhysics(leaf, restAngle(leaf, p), -v0, 0, k)
       }
     },
     [opened, N],
@@ -594,7 +600,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
     const dy = e.clientY - start.y
 
     if (!gesture.current) {
-      if (Math.abs(dx) < 8 || Math.abs(dx) < Math.abs(dy) * 1.2) return
+      if (Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(dy) * 1.05) return
       const p = pageSt.current
       const dir = dx > 0 ? 'fwd' : 'back'
       const leaf = dir === 'fwd' ? p : p - 1
@@ -616,7 +622,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
       e.currentTarget.setPointerCapture?.(start.id)
     }
     const g = gesture.current
-    const sweep = (Math.abs(dx) / PAGE_W) * 195
+    const sweep = (Math.abs(dx) / PAGE_W) * SWEEP
     const angle =
       g.dir === 'fwd'
         ? Math.min(MAX_DRAG_ANGLE, sweep)
@@ -702,6 +708,14 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
 
   return (
     <div
+      // the WHOLE stage is the gesture surface — swipe or edge-tap anywhere,
+      // not just on the book (handlers no-op while the passport is closed)
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onRelease}
+      onPointerCancel={endDrag}
+      onClickCapture={onClickCapture}
+      onDragStart={(e) => e.preventDefault()}
       style={{
         height: '100%',
         width: '100%',
@@ -709,6 +723,9 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
         overflow: 'hidden',
         background: 'radial-gradient(130% 100% at 50% 12%, #3b342b 0%, #241f19 48%, #120f0b 100%)',
         WebkitTapHighlightColor: 'transparent',
+        touchAction: 'none',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
       }}
     >
       <Grain opacity={0.05} size={280} />
@@ -857,12 +874,6 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
 
                   {/* PAGE STACK — leaves peel outward and pile on the open cover */}
                   <div
-                    onPointerDown={onPointerDown}
-                    onPointerMove={onPointerMove}
-                    onPointerUp={onRelease}
-                    onPointerCancel={endDrag}
-                    onClickCapture={onClickCapture}
-                    onDragStart={(e) => e.preventDefault()}
                     style={{
                       position: 'absolute',
                       top: 5,
@@ -874,10 +885,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
                       perspective: 1200,
                       perspectiveOrigin: '50% 50%',
                       ...PAGE_BG,
-                      touchAction: 'none',
                       cursor: 'grab',
-                      userSelect: 'none',
-                      WebkitUserSelect: 'none',
                     }}
                   >
                     {pages.map((p, i) => {

@@ -13,3 +13,9 @@ Drop the six engraved landmark images here, named by country id:
 picked up automatically at build time and replaces the built-in SVG
 engraving for that country (multiply-blended onto the page, fading
 toward the page head). Delete a file to fall back to the SVG.
+
+Note: `<id>.ink.webp` files are preprocessed "ink plates" (white removed,
+ink recolored to charcoal, top fade baked into the alpha channel) that
+render with cheap plain compositing. Raw white-background drops still work
+via live multiply blending, but for best performance ask Claude to bake
+them into ink plates.

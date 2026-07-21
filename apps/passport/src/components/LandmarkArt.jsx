@@ -15,12 +15,18 @@ const RASTER = import.meta.glob('../assets/pages/*.{png,jpg,jpeg,webp}', {
   query: '?url',
   import: 'default',
 })
+// `<id>.ink.webp` — preprocessed ink-on-transparent plates (fade baked into
+// alpha; see scripts/bake-page-art note in assets/pages/README). These render
+// with plain cheap compositing. A raw `<id>.png` drop still works and falls
+// back to live multiply blending.
 const rasterFor = (id) => {
+  let raw = null
   for (const [path, url] of Object.entries(RASTER)) {
-    const name = path.split('/').pop().replace(/\.[^.]+$/, '')
-    if (name === id) return url
+    const file = path.split('/').pop()
+    if (file.replace(/\.ink\.[^.]+$/, '') === id) return { url, ink: true }
+    if (file.replace(/\.[^.]+$/, '') === id) raw = { url, ink: false }
   }
-  return null
+  return raw
 }
 
 const S = { fill: 'none', stroke: 'currentColor', strokeLinecap: 'round', strokeLinejoin: 'round' }
@@ -436,15 +442,15 @@ export function PageArt({ id }) {
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: `url(${raster})`,
+          backgroundImage: `url(${raster.url})`,
           backgroundSize: 'contain',
           backgroundRepeat: 'no-repeat',
           backgroundPosition: 'center bottom',
-          filter: 'grayscale(1)',
-          mixBlendMode: 'multiply',
-          opacity: 0.42,
           pointerEvents: 'none',
-          ...mask,
+          // ink plates composite plainly (fast); raw drops blend live
+          ...(raster.ink
+            ? { opacity: 0.5 }
+            : { filter: 'grayscale(1)', mixBlendMode: 'multiply', opacity: 0.42, ...mask }),
         }}
       />
     )
