@@ -4,10 +4,23 @@ import { COUNTRIES, PAGE_BG, HOLDER, GRAND_REWARDS, REWARD_TIERS, RULES, SLOTS_P
 import { FRIEZE } from '../assets'
 import { MARK_CHARCOAL, MARK_GOLD } from '../assets'
 import { NOISE } from '../data/textures'
-import { Watermark, WorldMapWatermark, RewardIcon } from './Watermarks'
+import { WorldMapWatermark, RewardIcon } from './Watermarks'
+import { PageArt } from './LandmarkArt'
 import { Slot } from './Stamp'
 
 const EASE_BOOK = 'cubic-bezier(0.6, 0.05, 0.22, 1)'
+
+// A short haptic tick on page landings — silently absent on iOS Safari.
+const buzz = (ms = 8) => {
+  try {
+    navigator.vibrate?.(ms)
+  } catch {
+    /* not available */
+  }
+}
+
+// Tapping the outer edges of the page turns it (RTL: left edge = forward).
+const EDGE_TAP_FRAC = 0.17
 
 // ---- page physics (degrees / seconds) ----
 const GRAVITY = 2400 // angular pull toward the resting pose
@@ -192,7 +205,7 @@ function CountryPage({ c, collected, onPick, canStamp }) {
   const stamped = (i) => collected.includes(`${c.id}-${i}`)
   const count = Array.from({ length: SLOTS_PER_COUNTRY }).filter((_, i) => stamped(i)).length
   return (
-    <PageShell wm={<Watermark id={c.wm} />} justify="center" style={{ padding: '14px 14px 0' }}>
+    <PageShell wm={<PageArt id={c.id} />} justify="center" style={{ padding: '14px 14px 0' }}>
       <div style={{ textAlign: 'center' }}>
         <div dir="ltr" style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 16, letterSpacing: '0.17em', color: 'var(--text-primary)' }}>{c.en}</div>
         <div lang="ar" style={{ fontFamily: 'var(--font-display-ar)', fontWeight: 500, fontSize: 11.5, color: 'var(--brass-deep)', marginTop: 1 }}>{c.ar}</div>
@@ -461,6 +474,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
       const p = pageSt.current
       const clamped = Math.max(0, Math.min(N - 1, next))
       if (clamped === p) return
+      buzz()
       if (clamped > p) {
         const leaf = p
         beginFlight(leaf)
@@ -543,6 +557,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
     if (!s) return
     if (!s.moved) {
       // a clean tap: from the back, flip to the front; from the front, open
+      buzz()
       if (backView) setBackView(false)
       else onOpen()
       return
@@ -630,6 +645,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
     if (g.dir === 'fwd') {
       const committed = v <= -FLICK_V ? false : angle > 90 || v >= FLICK_V
       if (committed) {
+        buzz()
         setPage(g.leaf + 1)
         startPhysics(g.leaf, angle, v, restAngle(g.leaf, g.leaf + 1), g.k)
       } else {
@@ -638,11 +654,34 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
     } else {
       const committed = v >= FLICK_V ? false : angle < 90 || v <= -FLICK_V
       if (committed) {
+        buzz()
         setPage(g.leaf)
         startPhysics(g.leaf, angle, v, 0, g.k)
       } else {
         startPhysics(g.leaf, angle, v, restAngle(g.leaf, g.leaf + 1), g.k)
       }
+    }
+  }
+
+  /* ---- release on the page stack: finish a drag, or treat a clean tap on
+     the outer edges as a page turn (big, forgiving touch targets) ---- */
+  const onRelease = (e) => {
+    const start = startRef.current
+    const hadGesture = !!gesture.current
+    endDrag()
+    if (hadGesture || !start) return
+    if (Math.hypot(e.clientX - start.x, e.clientY - start.y) > 9) return
+    // don't steal taps meant for the foot-bar buttons, or for stamp slots
+    // while slots are tappable (demo). Live-mode slots are read-only, so
+    // edge taps over them still turn the page.
+    if (e.target.closest?.('button')) return
+    if (canStamp && e.target.closest?.('[data-slot]')) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const fx = (e.clientX - rect.left) / rect.width
+    if (fx <= EDGE_TAP_FRAC) {
+      goTo(pageSt.current + 1) // RTL: left edge reads forward
+    } else if (fx >= 1 - EDGE_TAP_FRAC && pageSt.current > 0) {
+      goTo(pageSt.current - 1)
     }
   }
   const onClickCapture = (e) => {
@@ -820,7 +859,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
                   <div
                     onPointerDown={onPointerDown}
                     onPointerMove={onPointerMove}
-                    onPointerUp={endDrag}
+                    onPointerUp={onRelease}
                     onPointerCancel={endDrag}
                     onClickCapture={onClickCapture}
                     onDragStart={(e) => e.preventDefault()}
@@ -956,7 +995,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
                         onClick={() => goTo(page + 1)}
                         disabled={page >= N - 1}
                         aria-label="الصفحة التالية"
-                        style={{ background: 'none', border: 'none', cursor: page >= N - 1 ? 'default' : 'pointer', color: 'var(--brass-deep)', opacity: page >= N - 1 ? 0.25 : 0.9, fontSize: 15, lineHeight: 1, padding: '2px 8px', fontFamily: 'var(--font-sans)' }}
+                        style={{ background: 'none', border: 'none', cursor: page >= N - 1 ? 'default' : 'pointer', color: 'var(--brass-deep)', opacity: page >= N - 1 ? 0.25 : 0.9, fontSize: 15, lineHeight: 1, padding: '16px 18px', margin: '-14px -12px', touchAction: 'manipulation', fontFamily: 'var(--font-sans)' }}
                       >
                         ‹
                       </button>
@@ -968,7 +1007,7 @@ export function Book({ opened, onOpen, onClose, collected, holder, code, canStam
                       <button
                         onClick={() => (page > 0 ? goTo(page - 1) : onClose?.())}
                         aria-label={page > 0 ? 'الصفحة السابقة' : 'أغلق الجواز'}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--brass-deep)', opacity: 0.9, fontSize: 15, lineHeight: 1, padding: '2px 8px', fontFamily: 'var(--font-sans)' }}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--brass-deep)', opacity: 0.9, fontSize: 15, lineHeight: 1, padding: '16px 18px', margin: '-14px -12px', touchAction: 'manipulation', fontFamily: 'var(--font-sans)' }}
                       >
                         {page > 0 ? '›' : '✕'}
                       </button>

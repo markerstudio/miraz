@@ -8,7 +8,10 @@
 @import './tokens/spacing.css';
 
 * { box-sizing: border-box; }
-html, body { margin: 0; }
+html, body { margin: 0; overscroll-behavior: none; }
+
+/* kill double-tap-zoom delay and pull-to-refresh over the passport */
+body { touch-action: manipulation; }
 
 body {
   background: radial-gradient(120% 120% at 50% 0%, #35302a 0%, #211f1c 60%, #17150f 100%);
